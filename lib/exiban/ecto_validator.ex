@@ -4,7 +4,7 @@ defmodule ExIban.EctoValidator do
   """
 
   @doc """
-  Validate Ecto changeset. Returns changeset or tuple in format `{field, error_msg}` which can be useful for Phoenix.
+  Validate Ecto changeset. Returns changeset or tuple in format `{field, {error_msg, []}}` which can be useful for Phoenix.
 
   ## Examples
 
@@ -30,14 +30,16 @@ defmodule ExIban.EctoValidator do
     %{changes: changes, errors: errors} = changeset
 
     iban = Map.get(changes, field)
-    case ExIban.validate(iban) do
-      {:error, new_errors} ->
+    case {iban, ExIban.validate(iban)} do
+      {nil, _} ->
+        changeset
+      {_, {:error, new_errors}} ->
         new_errors = new_errors
                       |> Enum.map(&Atom.to_string/1)
                       |> Enum.map(&(String.replace(&1, "_", " ")))
-                      |> Enum.map(&({field, &1}))
+                      |> Enum.map(&({field, {&1, []}}))
         %{changeset | errors: new_errors ++ errors, valid?: false}
-      :ok -> changeset
+      {_, :ok} -> changeset
     end
   end
 end
